@@ -85,7 +85,7 @@ def test_live_news_skips_placeholders_and_fills_five_slots(live_feed):
     assert [item["title"] for item in bundle["news"]] == titles[:5]
     assert [item["id"] for item in bundle["news"]] == [f"N{i}" for i in range(1, 6)]
     assert all(item["headline_only"] for item in bundle["news"])
-    assert json.loads(live_feed.cache.read_text())["news"] == bundle["news"]
+    assert json.loads(live_feed.cache.read_text(encoding="utf-8"))["news"] == bundle["news"]
     assert any("headlines only" in warning for warning in bundle["warnings"])
 
 
@@ -108,7 +108,7 @@ def test_cached_invalid_news_is_refetched(live_feed, title):
     titles = [f"Valid headline {i} - Yahoo Finance" for i in range(6)]
     live_feed.set_titles(titles)
     data.load_bundle("live", "GOOGL")
-    cached = json.loads(live_feed.cache.read_text())
+    cached = json.loads(live_feed.cache.read_text(encoding="utf-8"))
     cached["news"][0]["title"] = title
     live_feed.cache.write_text(json.dumps(cached))
 
@@ -116,7 +116,7 @@ def test_cached_invalid_news_is_refetched(live_feed, title):
 
     assert [item["title"] for item in bundle["news"]] == titles[:5]
     assert live_feed.calls == {"prices": 2, "rss": 2}
-    assert json.loads(live_feed.cache.read_text())["news"] == bundle["news"]
+    assert json.loads(live_feed.cache.read_text(encoding="utf-8"))["news"] == bundle["news"]
 
 
 def test_valid_news_cache_is_reused_unless_refresh_requested(live_feed):

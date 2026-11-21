@@ -53,7 +53,7 @@ def _valid_news_title(title: str | None) -> bool:
 
 def load_bundle(mode: str, ticker: str, refresh: bool = False) -> dict:
     if mode == "fixture":
-        bundle = json.loads((ROOT / "data/fixtures/demo.json").read_text())
+        bundle = json.loads((ROOT / "data/fixtures/demo.json").read_text(encoding="utf-8"))
         if ticker != bundle["ticker"]:
             raise ValueError("fixture only supports DEMO; use --mode live for real tickers")
     else:
@@ -63,7 +63,7 @@ def load_bundle(mode: str, ticker: str, refresh: bool = False) -> dict:
         now = datetime.now(ZoneInfo("America/New_York"))
         cache = ROOT / "data/cache" / f"{ticker}-{now.date()}.json"
         if cache.exists() and not refresh:
-            cached = json.loads(cache.read_text())
+            cached = json.loads(cache.read_text(encoding="utf-8"))
             # Refill the news slots if an older cache contains invalid titles.
             if all(_valid_news_title(item.get("title")) for item in cached["news"]):
                 cached["indicators"] = indicators(cached["prices"])
@@ -106,7 +106,7 @@ def load_bundle(mode: str, ticker: str, refresh: bool = False) -> dict:
                   "price_basis":"Yahoo auto-adjusted OHLC", "prices":rows, "news":news, "warnings":warnings,
                   "sources":[{"id":"P1", "url":f"https://finance.yahoo.com/quote/{ticker}/history/", "provider":"Yahoo via yfinance", "retrieved_at":now.isoformat()}]}
         cache.parent.mkdir(parents=True, exist_ok=True)
-        cache.write_text(json.dumps(bundle, ensure_ascii=False, indent=2))
+        cache.write_text(json.dumps(bundle, ensure_ascii=False, indent=2), encoding="utf-8")
     bundle["indicators"] = indicators(bundle["prices"])
     bundle["target_week"] = target_week(bundle["as_of"])
     bundle["sha256"] = hashlib.sha256(json.dumps(bundle, sort_keys=True).encode()).hexdigest()

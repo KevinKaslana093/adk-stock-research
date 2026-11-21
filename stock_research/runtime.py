@@ -55,7 +55,7 @@ def validate_decision(raw: dict, bundle: dict) -> Decision:
     return d
 
 def config():
-    return yaml.safe_load((ROOT / "config/workshop.yaml").read_text())
+    return yaml.safe_load((ROOT / "config/workshop.yaml").read_text(encoding="utf-8"))
 
 def build_team(bundle: dict, discovery: str, before_model=None):
     from google.adk import Workflow
@@ -122,15 +122,15 @@ async def run(bundle: dict, discovery: str, max_calls: int | None = None, *, web
     os.close(fd)
     try:
         ledger_path = runs_root / "budget.json"
-        ledger = json.loads(ledger_path.read_text()) if ledger_path.exists() else {"runs":0,"input":0,"output":0,"estimated_usd":0}
+        ledger = json.loads(ledger_path.read_text(encoding="utf-8")) if ledger_path.exists() else {"runs":0,"input":0,"output":0,"estimated_usd":0}
         if ledger["runs"] >= cfg["max_runs"] or ledger["estimated_usd"] >= cfg["max_estimated_usd"]:
             raise ValueError("group budget reached; stop and review runs/budget.json")
         ledger["runs"] += 1
-        ledger_path.write_text(json.dumps(ledger, indent=2))
+        ledger_path.write_text(json.dumps(ledger, indent=2), encoding="utf-8")
         run_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S") + "-" + uuid.uuid4().hex[:6]
         out = runs_root / run_id
         out.mkdir()
-        (out / "evidence.json").write_text(json.dumps(bundle, ensure_ascii=False, indent=2))
+        (out / "evidence.json").write_text(json.dumps(bundle, ensure_ascii=False, indent=2), encoding="utf-8")
         requests = []
         event_start = len(web_context.session.events) if web_context else 0
         def observe(callback_context, llm_request):
@@ -144,7 +144,7 @@ async def run(bundle: dict, discovery: str, max_calls: int | None = None, *, web
                     raise ValueError("group cost estimate reached; no further model step allowed")
             requests.append({"agent":callback_context.agent_name,"tools":list(llm_request.tools_dict),
                 "system_instruction":llm_request.config.system_instruction})
-            (out / "requests.json").write_text(json.dumps(requests,ensure_ascii=False,indent=2,default=str))
+            (out / "requests.json").write_text(json.dumps(requests,ensure_ascii=False,indent=2,default=str), encoding="utf-8")
         toolsets = {}
         trace, counts = [], {"input":0,"output":0,"model_responses":0,"tool_calls":0}
         started = time.monotonic()
@@ -163,7 +163,7 @@ async def run(bundle: dict, discovery: str, max_calls: int | None = None, *, web
                 if part.function_response:
                     record["responses"].append({"name":part.function_response.name,"response":part.function_response.response})
             if record["calls"] or record["responses"]: trace.append(record)
-            (out / "trace.json").write_text(json.dumps(trace, ensure_ascii=False, indent=2, default=str))
+            (out / "trace.json").write_text(json.dumps(trace, ensure_ascii=False, indent=2, default=str), encoding="utf-8")
         try:
             team, toolsets, reports, model = build_team(bundle, discovery, observe)
             if web_context:
@@ -198,18 +198,18 @@ async def run(bundle: dict, discovery: str, max_calls: int | None = None, *, web
             report = decision.model_dump() | {"ticker":bundle["ticker"], "as_of":bundle["as_of"],"target_week":bundle["target_week"],
                 "data_mode":bundle["mode"],"synthetic":bundle["synthetic"],"skills_inspection":reports,
                 "provenance":{"model":model,"adk":"2.13.0","data_sha256":bundle["sha256"],"discovery":discovery}}
-            (out / "decision.json").write_text(json.dumps(report,ensure_ascii=False,indent=2))
-            (out / "report.md").write_text(render_report(report))
+            (out / "decision.json").write_text(json.dumps(report,ensure_ascii=False,indent=2), encoding="utf-8")
+            (out / "report.md").write_text(render_report(report), encoding="utf-8")
         except BaseException as exc:
             failure = exc
-            (out / "failure.json").write_text(json.dumps({"type":type(exc).__name__,"message":str(exc)[:1000]}, ensure_ascii=False, indent=2))
+            (out / "failure.json").write_text(json.dumps({"type":type(exc).__name__,"message":str(exc)[:1000]}, ensure_ascii=False, indent=2), encoding="utf-8")
         finally:
             counts["seconds"] = round(time.monotonic()-started,2)
             counts["estimated_usd"] = round(counts["input"]*.75/1e6+counts["output"]*3.75/1e6,6)
             counts["pricing_basis"] = "Gemini 3.8 Flash Developer API Standard, Nov 2026; estimate, free tier may charge zero; no Search enabled"
-            (out / "usage.json").write_text(json.dumps(counts,indent=2))
+            (out / "usage.json").write_text(json.dumps(counts,indent=2), encoding="utf-8")
             for k in ["input","output","estimated_usd"]: ledger[k] += counts[k]
-            ledger_path.write_text(json.dumps(ledger,indent=2))
+            ledger_path.write_text(json.dumps(ledger,indent=2), encoding="utf-8")
             for t in toolsets.values(): await t.close()
         if failure:
             if not isinstance(failure, Exception): raise failure

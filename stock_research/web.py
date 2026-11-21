@@ -67,7 +67,7 @@ async def workshop(ctx: Context):
             from .data import load_bundle
             bundle = await asyncio.to_thread(load_bundle, args["mode"], args["ticker"])
             out = await run(bundle, args["discovery"], web_context=ctx)
-            answer = (out / "report.md").read_text() + f"\n\n运行记录：`{out.relative_to(ROOT)}`"
+            answer = (out / "report.md").read_text(encoding="utf-8") + f"\n\n运行记录：`{out.relative_to(ROOT)}`"
         return types.Content(role="model", parts=[types.Part(text=answer)])
     except Exception as exc:
         # Preserve native child events and partial run files; never render a

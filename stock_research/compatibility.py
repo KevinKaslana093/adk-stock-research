@@ -28,7 +28,7 @@ def inspect_skill(folder: Path, *, script_backend: bool = False) -> dict:
         if len(files) > 250 or sum(p.stat().st_size for p in files if p.is_file()) > 2_000_000:
             raise ValueError("file count/size exceeds workshop review limit")
         result["sha256"] = fingerprint(folder)
-        text = (folder / "SKILL.md").read_text()
+        text = (folder / "SKILL.md").read_text(encoding="utf-8")
         parts = text.split("---", 2)
         if len(parts) != 3 or parts[0].strip():
             raise ValueError("SKILL.md must start with YAML frontmatter")
@@ -92,5 +92,5 @@ def import_skill(source: Path) -> dict:
             return report | {"installed_to":str(dest),"activated":False,"already_present":True}
         raise ValueError("vendor destination exists; choose a new name/version")
     shutil.copytree(source, dest)
-    (dest.parent / f"{source.name}.inspection.json").write_text(json.dumps(report, ensure_ascii=False, indent=2))
+    (dest.parent / f"{source.name}.inspection.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
     return report | {"installed_to": str(dest), "activated": False}

@@ -104,5 +104,5 @@ async def lab(name: str) -> dict:
     else: raise ValueError("unknown lab")
     out = ROOT / "runs" / f"lab-{name}.json"
     out.parent.mkdir(exist_ok=True)
-    out.write_text(json.dumps(result,ensure_ascii=False,indent=2,default=str))
+    out.write_text(json.dumps(result,ensure_ascii=False,indent=2,default=str), encoding="utf-8")
     return result

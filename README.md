@@ -188,6 +188,31 @@ bash scripts/setup.sh
 
 有未提交修改时，先在自己的分支保存，再更新。
 
+### Windows PowerShell
+
+在项目根目录创建虚拟环境并安装锁定依赖。建议使用 Python 3.12。
+
+```powershell
+python -m venv .venv
+$py = ".\.venv\Scripts\python.exe"
+& $py -m pip install -r requirements.lock
+& $py -m stock_research.cli doctor
+& $py -m stock_research.cli offline-check
+```
+
+以上预检无需 API Key。配置 Key 后可用合成 DEMO 数据运行完整的 Gemini 工作流，报告保存到 `runs/`。
+
+```powershell
+& $py scripts/configure.py
+& $py -m stock_research.cli run --mode fixture --ticker DEMO
+```
+
+使用 Web 界面时，在项目根目录运行下方命令，再打开 [ADK Web UI](http://127.0.0.1:8000)、选择 `research` 并创建会话。可先发送 `help` 检查路由。
+
+```powershell
+& $py -m google.adk.cli web web_agents --port 8000 --no-reload --no_use_local_storage
+```
+
 <a id="research-tools"></a>
 
 ## 04 · 为研究方法准备函数与 Tool

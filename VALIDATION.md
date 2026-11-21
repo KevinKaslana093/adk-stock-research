@@ -165,3 +165,9 @@ Cloud Shell／Web Preview 仍未验证。所有截图均为合成输入；本轮
 - 定向回归 `.venv/bin/python -m pytest -q tests/test_news.py`：**12 passed，4 warnings**；全量回归 `.venv/bin/python -m pytest -q`：**41 passed，5 warnings，1.39 秒**。保留已有 pandas 弃用警告和 Skill 生命周期实验警告。
 - 新增测试固定纽约时间，以合成 OHLCV、本地 XML 和临时缓存执行真实 live 数据路径；未访问 Yahoo／Google News，未调用 Gemini，未消耗模型额度。
 - `git diff --check` 通过。修复采用针对明显模板标记的静态规则，不判断新闻正文真实性。
+# Windows 本地副本验证（2026-11-21）
+
+- Python 3.12.14 和锁定的 ADK 2.13.0。五个核心 Skill 均为 `SUPPORTED`，`offline-check` 成功构造三角色工作流并计算 DEMO 指标与交易周。
+- 回归测试 40 项通过，涵盖脚本模型驱动的 ADK Runner、CLI／Web 流程和报告校验。1 项符号链接测试因当前 Windows 账号缺少创建权限而跳过。
+- 启动 ADK Web 服务，通过 HTTP 创建会话并调用 `help` 和 `lab discovery`。
+- 当前环境没有 Gemini API Key，验证使用合成数据，未发起真实 Gemini 请求。

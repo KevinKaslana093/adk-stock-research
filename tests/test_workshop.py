@@ -18,7 +18,12 @@ def test_runtime_capability_mismatch(name,status):
 
 def test_symlink_rejected(tmp_path):
     folder = tmp_path/"bad"; folder.mkdir()
-    (folder/"SKILL.md").symlink_to(ROOT/"skills/data-quality/SKILL.md")
+    try:
+        (folder/"SKILL.md").symlink_to(ROOT/"skills/data-quality/SKILL.md")
+    except OSError as exc:
+        if getattr(exc, "winerror", None) == 1314:
+            pytest.skip("Windows account cannot create symbolic links")
+        raise
     assert inspect_skill(folder)["status"] == "UNSUPPORTED"
 
 def test_indicators_and_invalid_bars():
@@ -171,16 +176,16 @@ def test_real_runner_with_scripted_model(tmp_path,monkeypatch,entry,limit):
         asyncio.run(run_web())
     out=next(p for p in (tmp_path/"runs").iterdir() if p.is_dir())
     assert not (tmp_path/"runs/.running").exists()
-    assert json.loads((tmp_path/"runs/budget.json").read_text())["runs"] == 1
+    assert json.loads((tmp_path/"runs/budget.json").read_text(encoding="utf-8"))["runs"] == 1
     if limit:
         assert not (out/"decision.json").exists()
         assert (out/"failure.json").exists() and (out/"usage.json").exists()
-        assert len(json.loads((out/"requests.json").read_text())) == 1
+        assert len(json.loads((out/"requests.json").read_text(encoding="utf-8"))) == 1
         return
-    d=json.loads((out/"decision.json").read_text())
+    d=json.loads((out/"decision.json").read_text(encoding="utf-8"))
     assert d["action"]=="HOLD" and d["provenance"]["model"]=="scripted-test"
     assert (out/"trace.json").exists() and not (tmp_path/"runs/.running").exists()
-    usage=json.loads((out/"usage.json").read_text())
+    usage=json.loads((out/"usage.json").read_text(encoding="utf-8"))
     assert usage["tool_calls"] == 8 and usage["model_responses"] == 0
 
 @pytest.mark.parametrize("text", [
